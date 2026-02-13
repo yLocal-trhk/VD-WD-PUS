@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -222,6 +223,9 @@ input {
   <h3>○アーモンドチョコレート</h3>
   <div id="chocolate"></div>
 
+  <h3>○等身アクスタ</h3>
+  <div id="BB1"></div>
+
   <h3>○ランダム商品</h3>
   <div id="random_first"></div>
 
@@ -244,6 +248,7 @@ input {
 
 const PRICE = {
   chocolate: 1404,
+  BB1:1320,
   poster: 1320
 };
 
@@ -256,7 +261,6 @@ const RANDOM_PRICE_FIRST = {
   "等身缶バッジ": 550,
   "等身クリカ": 550,
   "等身アクキー": 880,
-  "等身アクスタ": 1320,
   "等身アクブロ": 880,
   "SDステッカー": 440,
   "SDアクスタ": 880,
@@ -358,6 +362,9 @@ function calc() {
 if (el.id.startsWith("ac_"))
   price += v * PRICE.chocolate;
 
+if (el.id.startsWith("bb1_"))
+  price += v * PRICE.BB1;
+
 else if (el.id.startsWith("ps_"))
   price += v * PRICE.poster;
 
@@ -415,10 +422,15 @@ function saveAsImage() {
     let unit = 0;
 
     if (el.id.startsWith("ac_")) {
-      unit = PRICE.chocolate;
-      firstSubtotal += unit * q;
-      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
-    }
+  unit = PRICE.chocolate;
+  firstSubtotal += unit * q;
+  firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+}
+else if (el.id.startsWith("bb1_")) {
+  unit = PRICE.BB1;
+  firstSubtotal += unit * q;
+  firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+}
     else if (el.id.startsWith("rd1_")) {
       unit = RANDOM_PRICE_FIRST[el.id.replace("rd1_","")];
       firstSubtotal += unit * q;
@@ -565,6 +577,7 @@ if (!line.startsWith("■") &&
 
 // 前半
 createGroup("chocolate","ac",PRICE.chocolate);
+createGroup("BB1","bb1",PRICE.BB1);
 createRandom("random_first","rd1",RANDOM_PRICE_FIRST);
 
 // 後半
