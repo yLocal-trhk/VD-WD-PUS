@@ -11,7 +11,28 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
-  background-color: #fff;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.4);
+  pointer-events: none;
+  z-index: -1;
+}
+
+body {
+  background: linear-gradient(
+    135deg,
+    #4d83b1,
+    #47975a,
+    #e99525,
+    #715f9b,
+    #a9363b,
+    #77a2a9
+  );
+  background-attachment: fixed;
 }
 
 body { padding-bottom: 0; }
