@@ -443,15 +443,15 @@ function saveAsImage() {
     let unit = 0;
 
     if (el.id.startsWith("ac_")) {
-  unit = PRICE.chocolate;
-  firstSubtotal += unit * q;
-  firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
-}
-else if (el.id.startsWith("bb1_")) {
-  unit = PRICE.BB1;
-  firstSubtotal += unit * q;
-  firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
-}
+      unit = PRICE.chocolate;
+      firstSubtotal += unit * q;
+      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+    else if (el.id.startsWith("bb1_")) {
+      unit = PRICE.BB1;
+      firstSubtotal += unit * q;
+      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
     else if (el.id.startsWith("rd1_")) {
       unit = RANDOM_PRICE_FIRST[el.id.replace("rd1_","")];
       firstSubtotal += unit * q;
@@ -487,26 +487,53 @@ else if (el.id.startsWith("bb1_")) {
   lines.push(`合計点数：${totalQty.textContent}`);
   lines.push(`合計金額：¥${totalPrice.textContent}`);
 
-/* ★高さを正確に計算 */
-let height = 50;
+  /* ===== 横幅を中身に合わせて自動計算 ===== */
 
-lines.forEach((line, i) => {
-  if (i === 0) height += 26;
-  else if (i === 1) height += 24;
-  else if (line === "RED_LINE") height += 24;
-  else if (line === "SUBTOTAL_FIRST" || line === "SUBTOTAL_SECOND") height += 44;
-  else if (!line.startsWith("■")) height += 28;
-  else height += 26;
-});
+  let maxTextWidth = 0;
 
+  lines.forEach(line => {
+    if (line === "RED_LINE") return;
 
-canvas.width = 750;
-canvas.height = height + 40;
+    if (line === "POP UP STORE") {
+      ctx.font = "bold 22px sans-serif";
+    } else if (line.startsWith("■") || line.includes("小計")) {
+      ctx.font = "bold 18px sans-serif";
+    } else {
+      ctx.font = "18px sans-serif";
+    }
 
+    const w = ctx.measureText(
+      line === "SUBTOTAL_FIRST" ? `前半小計：¥${firstSubtotal.toLocaleString()}` :
+      line === "SUBTOTAL_SECOND" ? `後半小計：¥${secondSubtotal.toLocaleString()}` :
+      line
+    ).width;
 
-  ctx.fillStyle = "#fff"; /* グレー */
+    if (w > maxTextWidth) maxTextWidth = w;
+  });
+
+  const sidePadding = 60; // 左右30pxずつ
+  canvas.width = Math.ceil(maxTextWidth + sidePadding);
+
+  /* ===== 高さ計算 ===== */
+
+  let height = 50;
+
+  lines.forEach((line, i) => {
+    if (i === 0) height += 26;
+    else if (i === 1) height += 24;
+    else if (line === "RED_LINE") height += 24;
+    else if (line === "SUBTOTAL_FIRST" || line === "SUBTOTAL_SECOND") height += 44;
+    else if (!line.startsWith("■")) height += 28;
+    else height += 26;
+  });
+
+  canvas.height = height + 40;
+
+  /* ===== 描画 ===== */
+
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#000"; /* 黒 */
+  ctx.fillStyle = "#000";
 
   let y = 50;
 
@@ -557,17 +584,11 @@ canvas.height = height + 40;
         line === "SUBTOTAL_FIRST" ? "前半小計" : "後半小計";
 
       ctx.fillText(`${label}：¥${subtotal.toLocaleString()}`, 30, y);
-      y += 26;
-/* ★ここ追加：次のブロックとの余白 */
-y += 10;
-
-return;
+      y += 36;
+      return;
     }
 
-if (!line.startsWith("■") &&
-    lines[i+1] !== "SUBTOTAL_FIRST" &&
-    lines[i+1] !== "SUBTOTAL_SECOND") {
-
+    if (!line.startsWith("■")) {
       ctx.font = "18px sans-serif";
       ctx.fillText(line, 30, y);
 
@@ -593,6 +614,7 @@ if (!line.startsWith("■") &&
   a.href = canvas.toDataURL("image/png");
   a.click();
 }
+
 
 
 
