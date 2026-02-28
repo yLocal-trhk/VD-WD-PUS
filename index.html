@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -140,6 +141,17 @@ input {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
+.summary-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+.bonus-line {
+  font-size: 13px;
+  color: #555;
+}
 
 .save-btn {
   background: #84c1b1;
@@ -224,15 +236,24 @@ input {
 
 <!-- ★ここは合計バーだけ -->
 <div class="summary-fixed">
-  <div>
-    合計：<span id="totalQty">0</span>点 /
-    ¥<span id="totalPrice">0</span>
+
+  <div class="summary-left">
+    <div>
+      合計：<span id="totalQty">0</span>点 /
+      ¥<span id="totalPrice">0</span>
+    </div>
+
+    <div class="bonus-line">
+      特典：<span id="bonusCount">0</span>枚 /
+      抽選：<span id="lotteryCount">0</span>回
+    </div>
   </div>
 
   <div style="display:flex; gap:8px;">
     <button class="save-btn" onclick="saveAsImage()">画像で保存</button>
     <button class="reset-btn" onclick="resetAll()">リセット</button>
   </div>
+
 </div>
 
 
@@ -383,7 +404,7 @@ function calc() {
 if (el.id.startsWith("ac_"))
   price += v * PRICE.chocolate;
 
-if (el.id.startsWith("bb1_"))
+else if  (el.id.startsWith("bb1_"))
   price += v * PRICE.BB1;
 
 else if (el.id.startsWith("ps_"))
@@ -401,6 +422,13 @@ else if (el.id.startsWith("rd2_")) {
 
   totalQty.textContent = qty;
   totalPrice.textContent = price.toLocaleString();
+    // ===== 特典・抽選計算 =====
+  const bonus = Math.floor(price / 3000);   // 3,000円毎
+  const lottery = Math.floor(price / 5000); // 5,000円毎
+
+  document.getElementById("bonusCount").textContent = bonus;
+  document.getElementById("lotteryCount").textContent = lottery;
+  
   saveData(); 
 }
 
@@ -433,6 +461,7 @@ function saveAsImage() {
   let firstSubtotal = 0;
   let secondSubtotal = 0;
 
+  // ===== 商品集計 =====
   document.querySelectorAll("input").forEach(el => {
     const q = Number(el.value);
     if (!q) return;
@@ -469,6 +498,13 @@ function saveAsImage() {
     }
   });
 
+  // ===== 合計・特典計算 =====
+  const totalQtyValue = Number(totalQty.textContent);
+  const totalPriceValue = Number(totalPrice.textContent.replace(/,/g,""));
+
+  const bonusCount = Math.floor(totalPriceValue / 3000);
+  const lotteryCount = Math.floor(totalPriceValue / 5000);
+
   const lines = [
     "Valentine's Day & White Day",
     "POP UP STORE",
@@ -484,38 +520,32 @@ function saveAsImage() {
   }
 
   lines.push("RED_LINE");
-  lines.push(`合計点数：${totalQty.textContent}`);
-  lines.push(`合計金額：¥${totalPrice.textContent}`);
+  lines.push("FINAL_BLOCK");
 
-  /* ===== 横幅を中身に合わせて自動計算 ===== */
-
+  // ===== 横幅計算 =====
   let maxTextWidth = 0;
 
   lines.forEach(line => {
-    if (line === "RED_LINE") return;
+    if (line === "RED_LINE" || line === "FINAL_BLOCK") return;
 
-    if (line === "POP UP STORE") {
-      ctx.font = "bold 22px sans-serif";
-    } else if (line.startsWith("■") || line.includes("小計")) {
-      ctx.font = "bold 18px sans-serif";
-    } else {
-      ctx.font = "18px sans-serif";
-    }
+    ctx.font =
+      line === "POP UP STORE" ? "bold 22px sans-serif" :
+      line.startsWith("■") || line.includes("小計") ? "bold 18px sans-serif" :
+      "18px sans-serif";
 
-    const w = ctx.measureText(
+    const text =
       line === "SUBTOTAL_FIRST" ? `前半小計：¥${firstSubtotal.toLocaleString()}` :
       line === "SUBTOTAL_SECOND" ? `後半小計：¥${secondSubtotal.toLocaleString()}` :
-      line
-    ).width;
+      line;
 
+    const w = ctx.measureText(text).width;
     if (w > maxTextWidth) maxTextWidth = w;
   });
 
-  const sidePadding = 60; // 左右30pxずつ
+  const sidePadding = 60;
   canvas.width = Math.ceil(maxTextWidth + sidePadding);
 
-  /* ===== 高さ計算 ===== */
-
+  // ===== 高さ計算 =====
   let height = 50;
 
   lines.forEach((line, i) => {
@@ -523,14 +553,14 @@ function saveAsImage() {
     else if (i === 1) height += 24;
     else if (line === "RED_LINE") height += 24;
     else if (line === "SUBTOTAL_FIRST" || line === "SUBTOTAL_SECOND") height += 44;
+    else if (line === "FINAL_BLOCK") height += 70;
     else if (!line.startsWith("■")) height += 28;
     else height += 26;
   });
 
   canvas.height = height + 40;
 
-  /* ===== 描画 ===== */
-
+  // ===== 描画開始 =====
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#000";
@@ -585,6 +615,34 @@ function saveAsImage() {
 
       ctx.fillText(`${label}：¥${subtotal.toLocaleString()}`, 30, y);
       y += 36;
+      return;
+    }
+
+    if (line === "FINAL_BLOCK") {
+
+      y += 10;
+      ctx.font = "bold 18px sans-serif";
+
+      const leftX = 30;
+      const rightMargin = 30;
+
+      const bonusText = `特典：${bonusCount}枚`;
+      const lotteryText = `抽選：${lotteryCount}回`;
+
+      const bonusX = canvas.width - rightMargin - ctx.measureText(bonusText).width;
+      const lotteryX = canvas.width - rightMargin - ctx.measureText(lotteryText).width;
+
+      // 1行目
+      ctx.fillText(`合計点数：${totalQtyValue}`, leftX, y);
+      ctx.fillText(bonusText, bonusX, y);
+
+      y += 30;
+
+      // 2行目
+      ctx.fillText(`合計金額：¥${totalPriceValue.toLocaleString()}`, leftX, y);
+      ctx.fillText(lotteryText, lotteryX, y);
+
+      y += 40;
       return;
     }
 
